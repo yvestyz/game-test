@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zombie Type Master × 千日文理教育</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --green: #39ff14;
+    --green-dim: #1a7a09;
+    --green-glow: rgba(57,255,20,0.12);
+    --red: #ff3333;
+    --amber: #ffaa00;
+    --text: #e8e8e0;
+    --muted: #666660;
+    --border: rgba(57,255,20,0.18);
+    --radius: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* NAV */
+  nav {
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,10,0.92);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+
+  .nav-brand {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .nav-brand span {
+    color: var(--green);
+  }
+
+  .nav-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: var(--green);
+    color: #000;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: var(--radius);
+    transition: opacity 0.15s;
+  }
+
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* HERO */
+  .hero {
+    padding: 5rem 2rem 4rem;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+  }
+
+  .hero-eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 2rem;
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+  }
+
+  .hero-eyebrow::before {
+    content: '// ';
+    color: var(--green-dim);
+  }
+
+  .hero h1 {
+    font-size: clamp(3.5rem, 10vw, 7rem);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero h1 .highlight {
+    color: var(--green);
+    display: block;
+  }
+
+  .hero-sub {
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+  }
+
+  .hero-sub span {
+    color: var(--text);
+    margin: 0 0.75rem;
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 40px;
+    background: var(--green);
+    color: #000;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: var(--radius);
+    transition: all 0.15s;
+    box-shadow: 0 0 32px var(--green-glow);
+  }
+
+  .hero-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 48px rgba(57,255,20,0.25);
+  }
+
+  /* GAME PREVIEW */
+  .game-preview {
+    max-width: 900px;
+    margin: 3rem auto;
+    padding: 0 2rem;
+  }
+
+  .terminal-window {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .terminal-bar {
+    background: var(--surface2);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .dot-red { background: #ff5f57; }
+  .dot-amber { background: #febc2e; }
+  .dot-green { background: #28c840; }
+
+  .terminal-title {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .game-canvas {
+    padding: 2.5rem 2rem;
+    position: relative;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(57,255,20,0.06) 0%, transparent 70%);
+  }
+
+  .zombie-row {
+    display: flex;
+    gap: 2.5rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .zombie-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .zombie-card:nth-child(2) { animation-delay: -1s; }
+  .zombie-card:nth-child(3) { animation-delay: -2s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .zombie-ascii {
+    font-size: 24px;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--green);
+    opacity: 0.9;
+  }
+
+  .zombie-word {
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  .zombie-word .typed {
+    color: #fff;
+    text-decoration: underline;
+  }
+
+  .typed-word {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .hud {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    padding: 0 8px;
+  }
+
+  .hud-stat { color: var(--muted); }
+  .hud-stat span { color: var(--green); }
+
+  /* SECTION SHARED */
+  section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::before { content: '//'; color: var(--green-dim); }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ABOUT */
+  .about-text {
+    font-size: 18px;
+    line-height: 1.85;
+    color: #c8c8c0;
+    max-width: 680px;
+  }
+
+  .about-text strong {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .about-text em {
+    color: var(--green);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  /* FEATURES GRID */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .feature-card:hover {
+    border-color: rgba(57,255,20,0.4);
+    transform: translateY(-2px);
+  }
+
+  .feature-icon {
+    font-size: 22px;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .feature-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .feature-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* HOW TO PLAY */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .step {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .step-num {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+    min-width: 32px;
+    padding-top: 2px;
+    letter-spacing: 0.1em;
+  }
+
+  .step-content { flex: 1; }
+
+  .step-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .step-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* DIFFICULTY */
+  .diff-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .diff-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .diff-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 100px;
+    margin-bottom: 1rem;
+  }
+
+  .diff-easy { background: rgba(40,200,64,0.15); color: #28c840; border: 1px solid rgba(40,200,64,0.3); }
+  .diff-normal { background: rgba(255,170,0,0.12); color: var(--amber); border: 1px solid rgba(255,170,0,0.3); }
+  .diff-hard { background: rgba(255,51,51,0.12); color: var(--red); border: 1px solid rgba(255,51,51,0.3); }
+
+  .diff-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .diff-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* LEADERBOARD TEASER */
+  .leaderboard-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 1.5rem;
+  }
+
+  .lb-header {
+    padding: 0.875rem 1.5rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .lb-header .lb-title { color: var(--green); }
+  .lb-header .lb-live {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+  }
+
+  .lb-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: blink 1.2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .lb-rows {
+    padding: 0.5rem 0;
+  }
+
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.625rem 1.5rem;
+    border-bottom: 1px solid rgba(57,255,20,0.06);
+    font-size: 13px;
+  }
+
+  .lb-row:last-child { border-bottom: none; }
+
+  .lb-rank { color: var(--green); min-width: 28px; font-weight: 700; }
+  .lb-name { flex: 1; color: var(--text); }
+  .lb-score { color: var(--amber); font-weight: 700; letter-spacing: 0.05em; }
+  .lb-diff { font-size: 11px; color: var(--muted); }
+
+  .lb-row.you {
+    background: rgba(57,255,20,0.06);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .footer-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 32px;
+    background: var(--green);
+    color: #000;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: var(--radius);
+    transition: opacity 0.15s;
+    box-shadow: 0 0 24px var(--green-glow);
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-cta:hover { opacity: 0.85; }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 3rem; }
+    .diff-row { grid-template-columns: 1fr; }
+    nav { padding: 1rem; }
+    .hero { padding: 3rem 1.25rem 3rem; }
+    section { padding: 3rem 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">千日文理教育 <span>×</span> Vibe Coding Camp</div>
+  <a class="nav-cta" href="https://zombie-type-master--yizhentsai0527.replit.app/" target="_blank" rel="noopener">▶ 立即遊玩</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">學生作品 · AI 製作 · 全球排行榜</div>
+  <h1>ZOMBIE<span class="highlight">TYPE</span>MASTER</h1>
+  <p class="hero-sub">
+    <span>打字消滅殭屍</span>·
+    <span>三種難度</span>·
+    <span>競速闖關</span>
+  </p>
+  <a class="hero-cta" href="https://zombie-type-master--yizhentsai0527.replit.app/" target="_blank" rel="noopener">
+    ▶ 立即遊玩
+  </a>
+</div>
+
+<!-- GAME PREVIEW TERMINAL -->
+<div class="game-preview">
+  <div class="terminal-window">
+    <div class="terminal-bar">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-amber"></div>
+      <div class="dot dot-green"></div>
+      <div class="terminal-title">zombie-type-master — STAGE 03</div>
+    </div>
+    <div class="game-canvas">
+      <div class="hud">
+        <div class="hud-stat">HP <span>❤❤❤</span></div>
+        <div class="hud-stat">SCORE <span>4,280</span></div>
+        <div class="hud-stat">WAVE <span>03/∞</span></div>
+      </div>
+      <div class="zombie-row">
+        <div class="zombie-card">
+          <div class="zombie-ascii">🧟</div>
+          <div class="zombie-word"><span class="typed">bra</span>in</div>
+        </div>
+        <div class="zombie-card">
+          <div class="zombie-ascii">🧟‍♀️</div>
+          <div class="zombie-word">danger</div>
+        </div>
+        <div class="zombie-card">
+          <div class="zombie-ascii">🧟‍♂️</div>
+          <div class="zombie-word">escape</div>
+        </div>
+      </div>
+      <div class="typed-word">› 正在輸入中：bra<span style="color:var(--green)">|</span></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ABOUT -->
+<section>
+  <div class="section-label">about this game</div>
+  <p class="about-text">
+    這款遊戲誕生於<strong>千日文理教育 Vibe Coding Camp</strong> 的密集工作坊。製作者在課程開始前，從未碰過任何一行程式碼。
+  </p>
+  <br>
+  <p class="about-text">
+    透過 <strong>Replit Agent</strong> 搭建遊戲架構、<em>Claude</em> 優化遊戲邏輯並平衡難度——從零到有，完整的殭屍打字闖關遊戲在工作坊內誕生。
+    遊戲加入<strong>全球即時排行榜</strong>，讓每一局都是真實的世界級競技。
+  </p>
+</section>
+
+<hr class="divider">
+
+<!-- FEATURES -->
+<section>
+  <div class="section-label">game features</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">⌨️</span>
+      <div class="feature-title">打字消滅殭屍</div>
+      <div class="feature-desc">每隻殭屍頭上懸掛一個英文單字，正確拼出即可擊殺。手指越快，殭屍死得越快。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌊</span>
+      <div class="feature-title">波次系統</div>
+      <div class="feature-desc">殭屍分批湧入，波次越高數量越多、速度越快，隨時保持緊張感。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <div class="feature-title">字長決定速度</div>
+      <div class="feature-desc">單字越長，殭屍移動越慢；短詞敵人移動迅猛，考驗反應速度。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🏆</span>
+      <div class="feature-title">全球排行榜</div>
+      <div class="feature-desc">每局結束後分數即時上傳，與全球玩家同台競技，搶攻排名頂端。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎨</span>
+      <div class="feature-title">像素風格</div>
+      <div class="feature-desc">復古像素藝術美術風格，終端機綠色配色，打出經典 8-bit 末日氛圍。</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎯</span>
+      <div class="feature-title">三種難度</div>
+      <div class="feature-desc">簡單、普通、困難三擋選擇，初學者輕鬆入門，老手挑戰極限。</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- HOW TO PLAY -->
+<section>
+  <div class="section-label">how to play</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <div class="step-title">選擇難度</div>
+        <div class="step-desc">進入遊戲後選擇 Easy / Normal / Hard，難度影響殭屍數量、移動速度與單字複雜度。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <div class="step-title">觀察殭屍頭上的單字</div>
+        <div class="step-desc">每隻殭屍頭頂懸掛一個英文單字，仔細看清楚目標，鍵盤開打。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <div class="step-title">快速正確地拼出單字</div>
+        <div class="step-desc">開始輸入第一個字母後，遊戲自動鎖定該殭屍。完整拼完即擊殺，輸入錯誤不扣分但要重新輸入。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <div class="step-title">守住生命值，挑戰高分</div>
+        <div class="step-desc">殭屍碰到邊界就會扣血，三條命用完遊戲結束。分數即時上傳全球榜，看看你能排第幾！</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- DIFFICULTY -->
+<section>
+  <div class="section-label">difficulty modes</div>
+  <div class="diff-row">
+    <div class="diff-card">
+      <div class="diff-badge diff-easy">Easy</div>
+      <div class="diff-title">簡單</div>
+      <div class="diff-desc">單字短、殭屍少、速度慢，適合第一次挑戰或英文練習入門。</div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-badge diff-normal">Normal</div>
+      <div class="diff-title">普通</div>
+      <div class="diff-desc">均衡挑戰，單字長度與殭屍數量適中，體驗完整的打字節奏感。</div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-badge diff-hard">Hard</div>
+      <div class="diff-title">困難</div>
+      <div class="diff-desc">殭屍群湧、單字複雜、速度極快，手速與拼字雙重考驗，挑戰者限定。</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- LEADERBOARD -->
+<section>
+  <div class="section-label">global leaderboard</div>
+  <div class="leaderboard-box">
+    <div class="lb-header">
+      <div class="lb-title">全球排名 — 即時更新</div>
+      <div class="lb-live"><div class="lb-dot"></div> LIVE</div>
+    </div>
+    <div class="lb-rows">
+      <div class="lb-row">
+        <div class="lb-rank">#1</div>
+        <div class="lb-name">TypeGod_TW</div>
+        <div class="lb-score">12,840</div>
+        <div class="lb-diff" style="color:#ff5555">HARD</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">#2</div>
+        <div class="lb-name">ZombieSlayer</div>
+        <div class="lb-score">9,560</div>
+        <div class="lb-diff" style="color:#ff5555">HARD</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">#3</div>
+        <div class="lb-name">KeyboardWarrior</div>
+        <div class="lb-score">7,230</div>
+        <div class="lb-diff" style="color:var(--amber)">NORMAL</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">#4</div>
+        <div class="lb-name">qian_student_01</div>
+        <div class="lb-score">5,180</div>
+        <div class="lb-diff" style="color:var(--amber)">NORMAL</div>
+      </div>
+      <div class="lb-row you">
+        <div class="lb-rank" style="color:var(--green)">#?</div>
+        <div class="lb-name" style="color:var(--green)">你的名字在這裡嗎？</div>
+        <div class="lb-score" style="color:var(--green)">???</div>
+        <div class="lb-diff">—</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER CTA -->
+<hr class="divider">
+<footer>
+  <a class="footer-cta" href="https://zombie-type-master--yizhentsai0527.replit.app/" target="_blank" rel="noopener">
+    ▶ 立即遊玩
+  </a>
+  千日文理教育 × Vibe Coding Camp · <a href="https://vibecampworks.com" style="color:var(--green);text-decoration:none">vibecampworks.com</a>
+</footer>
+
+</body>
+</html>
